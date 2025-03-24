@@ -26,25 +26,35 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new IllegalArgumentException("Email already exists: " + user.getEmail());
         }
-        
-        // Encode password before saving
-        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash())); // user.getPasswordHash() is the password not password hash, but later gets hashed
+        String plainPassword = user.getPassword();
+        validatePassword(plainPassword);
+        user.setPasswordHash(passwordEncoder.encode(plainPassword));
         return userRepository.save(user);
     }
 
     @Override
     public User updateUser(User user) {
-        if (!userRepository.existsById(user.getId())) {
-            throw new EntityNotFoundException("User not found with id: " + user.getId());
+        User existingUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + user.getId()));
+        // Update fields if provided
+        if (user.getName() != null) {
+            existingUser.setName(user.getName());
         }
-        
-        // If password has changed, encode it
-        Optional<User> existingUser = userRepository.findById(user.getId());
-        if (existingUser.isPresent() && !existingUser.get().getPasswordHash().equals(user.getPasswordHash())) {
-            user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
+        if (user.getEmail() != null) {
+            existingUser.setEmail(user.getEmail());
         }
-        
-        return userRepository.save(user);
+        if (user.getRole() != null) {
+            existingUser.setRole(user.getRole());
+        }
+        // Update password if provided
+        String newPassword = user.getPassword();
+        validatePassword(newPassword);
+        String storedHash = existingUser.getPasswordHash();
+        if (passwordEncoder.matches(newPassword, storedHash)) {
+            throw new IllegalArgumentException("New password must differ from the current password");
+        }
+        existingUser.setPasswordHash(passwordEncoder.encode(newPassword));
+        return userRepository.save(existingUser);
     }
 
     @Override
@@ -84,4 +94,39 @@ public class UserServiceImpl implements UserService {
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
     }
-} 
+
+    private void validatePassword(String password) {
+        if (password == null || password.isEmpty()) {
+            throw new IllegalArgumentException("Password cannot be null or empty");
+        }
+
+        // boolean hasUppercase = false;
+        // boolean hasLowercase = false;
+        // boolean hasDigit = false;
+        // boolean hasSpecial = false;
+        // int length = password.length();
+        // String specialChars = "!@#$%&?.,";
+
+        // // Check each character once
+        // for (char c : password.toCharArray()) {
+        // if (Character.isUpperCase(c))
+        // hasUppercase = true;
+        // else if (Character.isLowerCase(c))
+        // hasLowercase = true;
+        // else if (Character.isDigit(c))
+        // hasDigit = true;
+        // else if (specialChars.indexOf(c) != -1)
+        // hasSpecial = true;
+        // }
+
+        // // Check all conditions; throw a single exception if any fail
+        // if (length < 8 || !hasUppercase || !hasLowercase || !hasDigit || !hasSpecial)
+        // {
+        // throw new IllegalArgumentException(
+        // "Password must have at least 8 characters and contain an uppercase letter, "
+        // +
+        // "a lowercase letter, a digit, and a special character \"" + specialChars +
+        // "\"");
+        // }
+    }
+}
