@@ -54,6 +54,16 @@ public class NotificationController {
             @PathVariable UUID id,
             @Valid @RequestBody Notification notification) {
         notification.setId(id);
+        
+        // Fetch the actual entities to avoid lazy loading issues
+        User user = userService.getUserById(notification.getUser().getId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + notification.getUser().getId()));
+        Document document = documentService.getDocumentById(notification.getDocument().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + notification.getDocument().getId()));
+        
+        notification.setUser(user);
+        notification.setDocument(document);
+        
         return ResponseEntity.ok(notificationService.updateNotification(notification));
     }
 
