@@ -1,5 +1,6 @@
 package com.nurtore.notification_spring.controller;
 
+import com.nurtore.notification_spring.dto.DocumentDTO;
 import com.nurtore.notification_spring.model.Document;
 import com.nurtore.notification_spring.model.DocumentCategory;
 import com.nurtore.notification_spring.model.DocumentStatus;
@@ -26,65 +27,83 @@ public class DocumentController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<Document> createDocument(@Valid @RequestBody Document document) {
+    public ResponseEntity<DocumentDTO> createDocument(@Valid @RequestBody Document document) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(documentService.createDocument(document));
+                .body(DocumentDTO.fromEntity(documentService.createDocument(document)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER') or @documentPermissionEvaluator.isOwner(#id, authentication.principal)")
-    public ResponseEntity<Document> updateDocument(@PathVariable UUID id, @Valid @RequestBody Document document) {
+    public ResponseEntity<DocumentDTO> updateDocument(@PathVariable UUID id, @Valid @RequestBody Document document) {
         document.setId(id);
-        return ResponseEntity.ok(documentService.updateDocument(document));
+        return ResponseEntity.ok(DocumentDTO.fromEntity(documentService.updateDocument(document)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER') or @documentPermissionEvaluator.hasAccess(#id, authentication.principal)")
-    public ResponseEntity<Document> getDocumentById(@PathVariable UUID id) {
+    public ResponseEntity<DocumentDTO> getDocumentById(@PathVariable UUID id) {
         return documentService.getDocumentById(id)
-                .map(ResponseEntity::ok)
+                .map(document -> ResponseEntity.ok(DocumentDTO.fromEntity(document)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/owner/{ownerId}")
     @PreAuthorize("hasRole('ADMIN') or #ownerId == authentication.principal.id")
-    public ResponseEntity<List<Document>> getDocumentsByOwner(@PathVariable UUID ownerId) {
+    public ResponseEntity<List<DocumentDTO>> getDocumentsByOwner(@PathVariable UUID ownerId) {
         return userService.getUserById(ownerId)
-                .map(owner -> ResponseEntity.ok(documentService.getDocumentsByOwner(owner)))
+                .map(owner -> ResponseEntity.ok(
+                    documentService.getDocumentsByOwner(owner).stream()
+                        .map(DocumentDTO::fromEntity)
+                        .toList()))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/status/{status}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<List<Document>> getDocumentsByStatus(@PathVariable DocumentStatus status) {
-        return ResponseEntity.ok(documentService.getDocumentsByStatus(status));
+    public ResponseEntity<List<DocumentDTO>> getDocumentsByStatus(@PathVariable DocumentStatus status) {
+        return ResponseEntity.ok(
+            documentService.getDocumentsByStatus(status).stream()
+                .map(DocumentDTO::fromEntity)
+                .toList());
     }
 
     @GetMapping("/category/{category}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<List<Document>> getDocumentsByCategory(@PathVariable DocumentCategory category) {
-        return ResponseEntity.ok(documentService.getDocumentsByCategory(category));
+    public ResponseEntity<List<DocumentDTO>> getDocumentsByCategory(@PathVariable DocumentCategory category) {
+        return ResponseEntity.ok(
+            documentService.getDocumentsByCategory(category).stream()
+                .map(DocumentDTO::fromEntity)
+                .toList());
     }
 
     @GetMapping("/expiring")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<List<Document>> getExpiringDocuments(
+    public ResponseEntity<List<DocumentDTO>> getExpiringDocuments(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate expirationDate) {
-        return ResponseEntity.ok(documentService.getExpiringDocuments(expirationDate));
+        return ResponseEntity.ok(
+            documentService.getExpiringDocuments(expirationDate).stream()
+                .map(DocumentDTO::fromEntity)
+                .toList());
     }
 
     @GetMapping("/expiring/range")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<List<Document>> getDocumentsExpiringBetween(
+    public ResponseEntity<List<DocumentDTO>> getDocumentsExpiringBetween(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return ResponseEntity.ok(documentService.getDocumentsExpiringBetween(startDate, endDate));
+        return ResponseEntity.ok(
+            documentService.getDocumentsExpiringBetween(startDate, endDate).stream()
+                .map(DocumentDTO::fromEntity)
+                .toList());
     }
 
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
-    public ResponseEntity<List<Document>> searchDocumentsByTitle(@RequestParam String title) {
-        return ResponseEntity.ok(documentService.searchDocumentsByTitle(title));
+    public ResponseEntity<List<DocumentDTO>> searchDocumentsByTitle(@RequestParam String title) {
+        return ResponseEntity.ok(
+            documentService.searchDocumentsByTitle(title).stream()
+                .map(DocumentDTO::fromEntity)
+                .toList());
     }
 
     @DeleteMapping("/{id}")
@@ -96,9 +115,9 @@ public class DocumentController {
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER') or @documentPermissionEvaluator.isOwner(#id, authentication.principal)")
-    public ResponseEntity<Document> updateDocumentStatus(
+    public ResponseEntity<DocumentDTO> updateDocumentStatus(
             @PathVariable UUID id,
             @RequestParam DocumentStatus status) {
-        return ResponseEntity.ok(documentService.updateDocumentStatus(id, status));
+        return ResponseEntity.ok(DocumentDTO.fromEntity(documentService.updateDocumentStatus(id, status)));
     }
 } 
