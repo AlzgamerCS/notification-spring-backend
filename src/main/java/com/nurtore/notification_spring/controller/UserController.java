@@ -19,18 +19,10 @@ import java.util.UUID;
 public class UserController {
     private final UserService userService;
 
-    @PostMapping
+    @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(userService.createUser(user));
-    }
-
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
-    public ResponseEntity<User> updateUser(@PathVariable UUID id, @Valid @RequestBody User user) {
-        user.setId(id);
-        return ResponseEntity.ok(userService.updateUser(user));
+    public ResponseEntity<List<User>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @GetMapping("/{id}")
@@ -55,10 +47,23 @@ public class UserController {
         return ResponseEntity.ok(userService.getUsersByRole(role));
     }
 
-    @GetMapping
+    @GetMapping("/exists/{email}")
+    public ResponseEntity<Boolean> checkEmailExists(@PathVariable String email) {
+        return ResponseEntity.ok(userService.existsByEmail(email));
+    }
+
+    @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(userService.createUser(user));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+    public ResponseEntity<User> updateUser(@PathVariable UUID id, @Valid @RequestBody User user) {
+        user.setId(id);
+        return ResponseEntity.ok(userService.updateUser(user));
     }
 
     @DeleteMapping("/{id}")
@@ -67,9 +72,4 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
-
-    @GetMapping("/exists/{email}")
-    public ResponseEntity<Boolean> checkEmailExists(@PathVariable String email) {
-        return ResponseEntity.ok(userService.existsByEmail(email));
-    }
-} 
+}
