@@ -20,7 +20,7 @@ import java.util.UUID;
 public class UserController {
     private final UserService userService;
 
-    @PostMapping
+    @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> createUser(@Valid @RequestBody User user) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -59,7 +59,12 @@ public class UserController {
                 .toList());
     }
 
-    @GetMapping
+    @GetMapping("/exists/{email}")
+    public ResponseEntity<Boolean> checkEmailExists(@PathVariable String email) {
+        return ResponseEntity.ok(userService.existsByEmail(email));
+    }
+
+    @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         return ResponseEntity.ok(
@@ -74,9 +79,4 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
-
-    @GetMapping("/exists/{email}")
-    public ResponseEntity<Boolean> checkEmailExists(@PathVariable String email) {
-        return ResponseEntity.ok(userService.existsByEmail(email));
-    }
-} 
+}

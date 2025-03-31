@@ -32,7 +32,10 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(name = "password_hash")
+    @Transient
+    private String password; // Plain text, not stored
+
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
