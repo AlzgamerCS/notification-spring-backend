@@ -1,5 +1,6 @@
 package com.nurtore.notification_spring.controller;
 
+import com.nurtore.notification_spring.dto.NotificationPreferenceDTO;
 import com.nurtore.notification_spring.model.NotificationChannel;
 import com.nurtore.notification_spring.model.NotificationPreference;
 import com.nurtore.notification_spring.service.NotificationPreferenceService;
@@ -23,52 +24,58 @@ public class NotificationPreferenceController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN') or #preference.user.id == authentication.principal.id")
-    public ResponseEntity<NotificationPreference> createPreference(@Valid @RequestBody NotificationPreference preference) {
+    public ResponseEntity<NotificationPreferenceDTO> createPreference(@Valid @RequestBody NotificationPreference preference) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(preferenceService.createPreference(preference));
+                .body(NotificationPreferenceDTO.fromEntity(preferenceService.createPreference(preference)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @preferencePermissionEvaluator.isOwner(#id, authentication.principal)")
-    public ResponseEntity<NotificationPreference> updatePreference(
+    public ResponseEntity<NotificationPreferenceDTO> updatePreference(
             @PathVariable UUID id,
             @Valid @RequestBody NotificationPreference preference) {
         preference.setId(id);
-        return ResponseEntity.ok(preferenceService.updatePreference(preference));
+        return ResponseEntity.ok(NotificationPreferenceDTO.fromEntity(preferenceService.updatePreference(preference)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or @preferencePermissionEvaluator.isOwner(#id, authentication.principal)")
-    public ResponseEntity<NotificationPreference> getPreferenceById(@PathVariable UUID id) {
+    public ResponseEntity<NotificationPreferenceDTO> getPreferenceById(@PathVariable UUID id) {
         return preferenceService.getPreferenceById(id)
-                .map(ResponseEntity::ok)
+                .map(preference -> ResponseEntity.ok(NotificationPreferenceDTO.fromEntity(preference)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
-    public ResponseEntity<List<NotificationPreference>> getPreferencesByUser(@PathVariable UUID userId) {
+    public ResponseEntity<List<NotificationPreferenceDTO>> getPreferencesByUser(@PathVariable UUID userId) {
         return userService.getUserById(userId)
-                .map(user -> ResponseEntity.ok(preferenceService.getPreferencesByUser(user)))
+                .map(user -> ResponseEntity.ok(
+                    preferenceService.getPreferencesByUser(user).stream()
+                        .map(NotificationPreferenceDTO::fromEntity)
+                        .toList()))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/user/{userId}/channel/{channel}")
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
-    public ResponseEntity<NotificationPreference> getPreferenceByUserAndChannel(
+    public ResponseEntity<NotificationPreferenceDTO> getPreferenceByUserAndChannel(
             @PathVariable UUID userId,
             @PathVariable NotificationChannel channel) {
         return userService.getUserById(userId)
                 .flatMap(user -> preferenceService.getPreferenceByUserAndChannel(user, channel))
-                .map(ResponseEntity::ok)
+                .map(preference -> ResponseEntity.ok(NotificationPreferenceDTO.fromEntity(preference)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/user/{userId}/enabled")
     @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
-    public ResponseEntity<List<NotificationPreference>> getEnabledPreferencesByUser(@PathVariable UUID userId) {
+    public ResponseEntity<List<NotificationPreferenceDTO>> getEnabledPreferencesByUser(@PathVariable UUID userId) {
         return userService.getUserById(userId)
-                .map(user -> ResponseEntity.ok(preferenceService.getEnabledPreferencesByUser(user)))
+                .map(user -> ResponseEntity.ok(
+                    preferenceService.getEnabledPreferencesByUser(user).stream()
+                        .map(NotificationPreferenceDTO::fromEntity)
+                        .toList()))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -81,16 +88,19 @@ public class NotificationPreferenceController {
 
     @PatchMapping("/{id}/toggle")
     @PreAuthorize("hasRole('ADMIN') or @preferencePermissionEvaluator.isOwner(#id, authentication.principal)")
-    public ResponseEntity<NotificationPreference> togglePreference(
+    public ResponseEntity<NotificationPreferenceDTO> togglePreference(
             @PathVariable UUID id,
             @RequestParam boolean enabled) {
-        return ResponseEntity.ok(preferenceService.togglePreference(id, enabled));
+        return ResponseEntity.ok(NotificationPreferenceDTO.fromEntity(preferenceService.togglePreference(id, enabled)));
     }
 
     @GetMapping("/channel/{channel}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<NotificationPreference>> getPreferencesByChannel(
+    public ResponseEntity<List<NotificationPreferenceDTO>> getPreferencesByChannel(
             @PathVariable NotificationChannel channel) {
-        return ResponseEntity.ok(preferenceService.getPreferencesByChannel(channel));
+        return ResponseEntity.ok(
+            preferenceService.getPreferencesByChannel(channel).stream()
+                .map(NotificationPreferenceDTO::fromEntity)
+                .toList());
     }
 } 

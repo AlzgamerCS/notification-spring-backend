@@ -1,5 +1,6 @@
 package com.nurtore.notification_spring.controller;
 
+import com.nurtore.notification_spring.dto.UserDTO;
 import com.nurtore.notification_spring.model.User;
 import com.nurtore.notification_spring.model.UserRole;
 import com.nurtore.notification_spring.service.UserService;
@@ -21,30 +22,41 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<UserDTO> createUser(@Valid @RequestBody User user) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(UserDTO.fromEntity(userService.createUser(user)));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+    public ResponseEntity<UserDTO> updateUser(@PathVariable UUID id, @Valid @RequestBody User user) {
+        user.setId(id);
+        return ResponseEntity.ok(UserDTO.fromEntity(userService.updateUser(user)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
-    public ResponseEntity<User> getUserById(@PathVariable UUID id) {
+    public ResponseEntity<UserDTO> getUserById(@PathVariable UUID id) {
         return userService.getUserById(id)
-                .map(ResponseEntity::ok)
+                .map(user -> ResponseEntity.ok(UserDTO.fromEntity(user)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/email/{email}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
+    public ResponseEntity<UserDTO> getUserByEmail(@PathVariable String email) {
         return userService.getUserByEmail(email)
-                .map(ResponseEntity::ok)
+                .map(user -> ResponseEntity.ok(UserDTO.fromEntity(user)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/role/{role}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<User>> getUsersByRole(@PathVariable UserRole role) {
-        return ResponseEntity.ok(userService.getUsersByRole(role));
+    public ResponseEntity<List<UserDTO>> getUsersByRole(@PathVariable UserRole role) {
+        return ResponseEntity.ok(
+            userService.getUsersByRole(role).stream()
+                .map(UserDTO::fromEntity)
+                .toList());
     }
 
     @GetMapping("/exists/{email}")
@@ -54,16 +66,11 @@ public class UserController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(userService.createUser(user));
-    }
-
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
-    public ResponseEntity<User> updateUser(@PathVariable UUID id, @Valid @RequestBody User user) {
-        user.setId(id);
-        return ResponseEntity.ok(userService.updateUser(user));
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        return ResponseEntity.ok(
+            userService.getAllUsers().stream()
+                .map(UserDTO::fromEntity)
+                .toList());
     }
 
     @DeleteMapping("/{id}")
