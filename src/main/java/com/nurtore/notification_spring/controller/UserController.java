@@ -43,7 +43,7 @@ public class UserController {
     }
 
     @GetMapping("/email/{email}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or #email == authentication.principal.username")
     public ResponseEntity<UserDTO> getUserByEmail(@PathVariable String email) {
         return userService.getUserByEmail(email)
                 .map(user -> ResponseEntity.ok(UserDTO.fromEntity(user)))
