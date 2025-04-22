@@ -9,19 +9,19 @@ import java.util.UUID;
 
 @Data
 public class UserDTO {
-    private UUID id;
+    private String id;
     private String name;
     private String email;
-    private UserRole role;
+    private String role;
     private LocalDateTime createdAt;
     private LocalDateTime lastLoginAt;
 
     public static UserDTO fromEntity(User user) {
         UserDTO dto = new UserDTO();
-        dto.setId(user.getId());
+        dto.setId(user.getId().toString());
         dto.setName(user.getName());
         dto.setEmail(user.getEmail());
-        dto.setRole(user.getRole());
+        dto.setRole(user.getRole().name());
         dto.setCreatedAt(user.getCreatedAt());
         dto.setLastLoginAt(user.getLastLoginAt());
         return dto;
