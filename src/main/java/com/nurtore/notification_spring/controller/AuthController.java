@@ -15,10 +15,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -55,9 +54,21 @@ public class AuthController {
     public static class AuthResponse {
         private final String token;
         private final User user;
+        private final String name;
+        private final String email;
+        private final String role;
+        private final LocalDateTime lastLoginAt;
+
+        public AuthResponse(String token, User user) {
+            this.token = token;
+            this.user = user;
+            this.name = user.getName();
+            this.email = user.getEmail();
+            this.role = user.getRole().name();
+            this.lastLoginAt = user.getLastLoginAt();
+        }
     }
 
-    // TODO: Implement the "last login at" feature
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
@@ -66,6 +77,10 @@ public class AuthController {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String token = jwtService.generateToken(userDetails);
         User user = userService.getUserByEmail(userDetails.getUsername()).orElseThrow();
+        
+        // Update last login
+        user.setLastLoginAt(LocalDateTime.now());
+        user = userService.updateUser(user);
 
         return ResponseEntity.ok(new AuthResponse(token, user));
     }
@@ -87,5 +102,13 @@ public class AuthController {
                         .build());
 
         return ResponseEntity.ok(new AuthResponse(token, createdUser));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<User> getCurrentUser(Authentication authentication) {
+        String email = authentication.getName();
+        return userService.getUserByEmail(email)
+                .map(user -> ResponseEntity.ok(user))
+                .orElse(ResponseEntity.notFound().build());
     }
 }
