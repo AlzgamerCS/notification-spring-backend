@@ -3,6 +3,11 @@ package com.nurtore.notification_spring.service.impl;
 import com.nurtore.notification_spring.model.*;
 import com.nurtore.notification_spring.repository.NotificationRepository;
 import com.nurtore.notification_spring.service.NotificationService;
+import com.nurtore.notification_spring.service.NotificationPreferenceService;
+import com.nurtore.notification_spring.service.EmailNotificationSender;
+import com.nurtore.notification_spring.service.SmsNotificationSender;
+import com.nurtore.notification_spring.service.TelegramNotificationSender;
+import com.nurtore.notification_spring.service.InAppNotificationSender;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +26,11 @@ import java.util.UUID;
 @Transactional
 public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
+    private final NotificationPreferenceService preferenceService;
+    private final EmailNotificationSender emailSender;
+    private final SmsNotificationSender smsSender;
+    private final TelegramNotificationSender telegramSender;
+    private final InAppNotificationSender inAppSender;
 
     @Override
     public Notification createNotification(Notification notification) {
@@ -118,18 +128,44 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Scheduled(fixedRate = 300000) // Run every 5 minutes
+    @Scheduled(initialDelay = 10000, fixedRate = 15000) // Start 10 seconds after startup, then run every 15 seconds
     public void processNotifications() {
-        log.info("Starting notification processing");
+        log.info("Running scheduled notification processing at: {}", LocalDateTime.now());
         List<Notification> pendingNotifications = getPendingNotificationsDue();
+        
+        if (pendingNotifications.isEmpty()) {
+            log.info("No pending notifications found to process");
+            return;
+        }
+        
+        log.info("Found {} pending notifications to process", pendingNotifications.size());
         
         for (Notification notification : pendingNotifications) {
             try {
-                // Here you would implement the actual notification sending logic
-                // This could involve calling an email service, SMS service, etc.
-                // For now, we'll just mark it as sent
-                markNotificationAsSent(notification.getId());
-                log.info("Processed notification: {}", notification.getId());
+                // Check if user has enabled this notification channel
+                Optional<NotificationPreference> preference = 
+                    preferenceService.getPreferenceByUserAndChannel(notification.getUser(), notification.getChannel());
+                
+                if (preference.isEmpty() || !preference.get().getEnabled()) {
+                    log.info("Skipping notification {} as channel {} is disabled for user {}", 
+                        notification.getId(), notification.getChannel(), notification.getUser().getId());
+                    continue;
+                }
+
+                // Send notification based on channel
+                boolean sent = switch (notification.getChannel()) {
+                    case EMAIL -> emailSender.send(notification);
+                    case SMS -> smsSender.send(notification);
+                    case TELEGRAM -> telegramSender.send(notification);
+                    case IN_APP -> inAppSender.send(notification);
+                };
+
+                if (sent) {
+                    markNotificationAsSent(notification.getId());
+                    log.info("Successfully sent notification: {}", notification.getId());
+                } else {
+                    throw new RuntimeException("Failed to send notification");
+                }
             } catch (Exception e) {
                 log.error("Failed to process notification: {}", notification.getId(), e);
                 notification.setStatus(NotificationStatus.FAILED);
