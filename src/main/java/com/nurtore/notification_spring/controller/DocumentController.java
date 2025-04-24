@@ -4,6 +4,7 @@ import com.nurtore.notification_spring.dto.DocumentDTO;
 import com.nurtore.notification_spring.model.Document;
 import com.nurtore.notification_spring.model.DocumentCategory;
 import com.nurtore.notification_spring.model.DocumentStatus;
+import com.nurtore.notification_spring.model.User;
 import com.nurtore.notification_spring.service.DocumentService;
 import com.nurtore.notification_spring.service.UserService;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -27,7 +29,10 @@ public class DocumentController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<DocumentDTO> createDocument(@Valid @RequestBody Document document) {
+    public ResponseEntity<DocumentDTO> createDocument(
+            @Valid @RequestBody Document document,
+            @AuthenticationPrincipal User user) {
+        document.setOwner(user);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(DocumentDTO.fromEntity(documentService.createDocument(document)));
     }
