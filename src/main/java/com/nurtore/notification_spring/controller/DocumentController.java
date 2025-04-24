@@ -52,6 +52,15 @@ public class DocumentController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
+    public ResponseEntity<List<DocumentDTO>> getMyDocuments(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(
+            documentService.getDocumentsByOwner(user).stream()
+                .map(DocumentDTO::fromEntity)
+                .toList());
+    }
+
     @GetMapping("/owner/{ownerId}")
     @PreAuthorize("hasRole('ADMIN') or #ownerId == authentication.principal.id")
     public ResponseEntity<List<DocumentDTO>> getDocumentsByOwner(@PathVariable UUID ownerId) {
