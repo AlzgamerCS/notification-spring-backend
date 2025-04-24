@@ -11,6 +11,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -82,6 +83,15 @@ public class NotificationController {
                         .map(NotificationDTO::fromEntity)
                         .toList()))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
+    public ResponseEntity<List<NotificationDTO>> getMyNotifications(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(
+            notificationService.getNotificationsByUser(user).stream()
+                .map(NotificationDTO::fromEntity)
+                .toList());
     }
 
     @GetMapping("/document/{documentId}")
