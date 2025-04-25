@@ -1,6 +1,8 @@
 package com.nurtore.notification_spring.controller;
 
 import com.nurtore.notification_spring.dto.NotificationDTO;
+import com.nurtore.notification_spring.dto.CreateNotificationRequest;
+import com.nurtore.notification_spring.dto.CreateNotificationWithEventRequest;
 import com.nurtore.notification_spring.dto.NotificationWithDocumentDTO;
 import com.nurtore.notification_spring.model.*;
 import com.nurtore.notification_spring.service.DocumentService;
@@ -30,11 +32,41 @@ public class NotificationController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<NotificationDTO> createNotification(
-            @Valid @RequestBody Notification notification,
+            @Valid @RequestBody CreateNotificationRequest request,
             @AuthenticationPrincipal User user) {
+        Document document = documentService.getDocumentById(request.getDocumentId())
+                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + request.getDocumentId()));
+
+        Notification notification = new Notification();
         notification.setUser(user);
+        notification.setDocument(document);
+        notification.setChannel(request.getChannel());
+        notification.setType(request.getType());
+        notification.setScheduledAt(request.getScheduledAt());
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(NotificationDTO.fromEntity(notificationService.createNotification(notification)));
+    }
+
+    @PostMapping("/with-event")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<NotificationDTO> createNotificationWithEvent(
+            @Valid @RequestBody CreateNotificationWithEventRequest request,
+            @AuthenticationPrincipal User user) {
+        Document document = documentService.getDocumentById(request.getDocumentId())
+                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + request.getDocumentId()));
+
+        Notification notification = new Notification();
+        notification.setUser(user);
+        notification.setDocument(document);
+        notification.setChannel(request.getChannel());
+        notification.setType(request.getType());
+        notification.setScheduledAt(request.getScheduledAt());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(NotificationDTO.fromEntity(
+                    notificationService.createNotificationWithEvent(notification, request.getCalendarEventDetails())
+                ));
     }
 
     @PostMapping("/schedule")

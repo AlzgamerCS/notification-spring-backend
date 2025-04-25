@@ -1,6 +1,7 @@
 package com.nurtore.notification_spring.service;
 
 import com.nurtore.notification_spring.model.*;
+import com.nurtore.notification_spring.dto.CalendarEventDetails;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.UUID;
 
 public interface NotificationService {
     Notification createNotification(Notification notification);
+    Notification createNotificationWithEvent(Notification notification, CalendarEventDetails calendarEventDetails);
     Notification scheduleNotification(Document document, User user, NotificationType type, LocalDateTime scheduledAt);
     Notification updateNotification(Notification notification);
     Optional<Notification> getNotificationById(UUID id);

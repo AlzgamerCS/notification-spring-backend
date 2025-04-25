@@ -8,6 +8,8 @@ import com.nurtore.notification_spring.service.EmailNotificationSender;
 import com.nurtore.notification_spring.service.SmsNotificationSender;
 import com.nurtore.notification_spring.service.TelegramNotificationSender;
 import com.nurtore.notification_spring.service.InAppNotificationSender;
+import com.nurtore.notification_spring.service.GoogleCalendarService;
+import com.nurtore.notification_spring.dto.CalendarEventDetails;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +33,42 @@ public class NotificationServiceImpl implements NotificationService {
     private final SmsNotificationSender smsSender;
     private final TelegramNotificationSender telegramSender;
     private final InAppNotificationSender inAppSender;
+    private final GoogleCalendarService googleCalendarService;
 
     @Override
     public Notification createNotification(Notification notification) {
         notification.setStatus(NotificationStatus.PENDING);
         return notificationRepository.save(notification);
+    }
+
+    @Override
+    public Notification createNotificationWithEvent(Notification notification, CalendarEventDetails calendarEventDetails) {
+        // First create the notification
+        notification.setStatus(NotificationStatus.PENDING);
+        Notification savedNotification = notificationRepository.save(notification);
+
+        // Create calendar event if requested
+        if (calendarEventDetails != null && calendarEventDetails.isCreateCalendarEvent()) {
+            try {
+                // Create calendar event
+                googleCalendarService.createEvent(
+                    calendarEventDetails.getSummary() != null ? calendarEventDetails.getSummary() : 
+                        "Notification: " + notification.getType().toString(),
+                    "", // location
+                    calendarEventDetails.getDescription() != null ? calendarEventDetails.getDescription() : 
+                        "Document notification: " + notification.getDocument().getTitle(),
+                    calendarEventDetails.getStartDateTime(),
+                    calendarEventDetails.getEndDateTime(),
+                    calendarEventDetails.getTimeZone() != null ? calendarEventDetails.getTimeZone() : "UTC",
+                    null // no attendees for now
+                );
+            } catch (Exception e) {
+                log.error("Failed to create calendar event for notification {}: {}", notification.getId(), e.getMessage());
+                // Don't fail the notification creation if calendar event fails
+            }
+        }
+
+        return savedNotification;
     }
 
     @Override
