@@ -1,6 +1,7 @@
 package com.nurtore.notification_spring.controller;
 
 import com.nurtore.notification_spring.dto.NotificationDTO;
+import com.nurtore.notification_spring.dto.NotificationWithDocumentDTO;
 import com.nurtore.notification_spring.model.*;
 import com.nurtore.notification_spring.service.DocumentService;
 import com.nurtore.notification_spring.service.NotificationService;
@@ -90,10 +91,10 @@ public class NotificationController {
 
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
-    public ResponseEntity<List<NotificationDTO>> getMyNotifications(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<NotificationWithDocumentDTO>> getMyNotifications(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(
             notificationService.getNotificationsByUser(user).stream()
-                .map(NotificationDTO::fromEntity)
+                .map(NotificationWithDocumentDTO::fromEntity)
                 .toList());
     }
 
