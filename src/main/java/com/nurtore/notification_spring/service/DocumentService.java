@@ -4,6 +4,7 @@ import com.nurtore.notification_spring.model.Document;
 import com.nurtore.notification_spring.model.DocumentCategory;
 import com.nurtore.notification_spring.model.DocumentStatus;
 import com.nurtore.notification_spring.model.User;
+import com.nurtore.notification_spring.dto.CalendarEventDetails;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.UUID;
 
 public interface DocumentService {
     Document createDocument(Document document);
+    Document createDocument(Document document, CalendarEventDetails calendarEventDetails);
     Document updateDocument(Document document);
     Optional<Document> getDocumentById(UUID id);
     List<Document> getDocumentsByOwner(User owner);

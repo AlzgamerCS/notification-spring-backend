@@ -1,6 +1,8 @@
 package com.nurtore.notification_spring.controller;
 
 import com.nurtore.notification_spring.dto.DocumentDTO;
+import com.nurtore.notification_spring.dto.CreateDocumentRequest;
+import com.nurtore.notification_spring.dto.CreateDocumentWithEventRequest;
 import com.nurtore.notification_spring.model.Document;
 import com.nurtore.notification_spring.model.DocumentCategory;
 import com.nurtore.notification_spring.model.DocumentStatus;
@@ -30,11 +32,41 @@ public class DocumentController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<DocumentDTO> createDocument(
-            @Valid @RequestBody Document document,
+            @Valid @RequestBody CreateDocumentRequest request,
             @AuthenticationPrincipal User user) {
+        Document document = new Document();
+        document.setTitle(request.getTitle());
+        document.setDescription(request.getDescription());
+        document.setCategory(request.getCategory());
+        document.setTags(request.getTags());
+        document.setExpirationDate(request.getExpirationDate());
+        document.setFilePath(request.getFilePath());
+        document.setStatus(request.getStatus());
         document.setOwner(user);
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(DocumentDTO.fromEntity(documentService.createDocument(document)));
+    }
+
+    @PostMapping("/with-event")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<DocumentDTO> createDocumentWithEvent(
+            @Valid @RequestBody CreateDocumentWithEventRequest request,
+            @AuthenticationPrincipal User user) {
+        Document document = new Document();
+        document.setTitle(request.getTitle());
+        document.setDescription(request.getDescription());
+        document.setCategory(request.getCategory());
+        document.setTags(request.getTags());
+        document.setExpirationDate(request.getExpirationDate());
+        document.setFilePath(request.getFilePath());
+        document.setStatus(request.getStatus());
+        document.setOwner(user);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(DocumentDTO.fromEntity(
+                    documentService.createDocument(document, request.getCalendarEventDetails())
+                ));
     }
 
     @PutMapping("/{id}")

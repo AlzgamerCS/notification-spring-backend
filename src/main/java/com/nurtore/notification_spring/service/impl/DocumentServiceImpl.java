@@ -6,12 +6,16 @@ import com.nurtore.notification_spring.model.DocumentStatus;
 import com.nurtore.notification_spring.model.User;
 import com.nurtore.notification_spring.repository.DocumentRepository;
 import com.nurtore.notification_spring.service.DocumentService;
+import com.nurtore.notification_spring.service.GoogleCalendarService;
+import com.nurtore.notification_spring.dto.CalendarEventDetails;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,14 +25,42 @@ import java.util.UUID;
 @Transactional
 public class DocumentServiceImpl implements DocumentService {
     private final DocumentRepository documentRepository;
+    private final GoogleCalendarService googleCalendarService;
 
     @Override
     public Document createDocument(Document document) {
+        return createDocument(document, null);
+    }
+
+    @Override
+    public Document createDocument(Document document, CalendarEventDetails calendarEventDetails) {
         // Set initial status if not set
         if (document.getStatus() == null) {
             document.setStatus(DocumentStatus.ACTIVE);
         }
-        return documentRepository.save(document);
+        
+        Document savedDocument = documentRepository.save(document);
+
+        // Create calendar event if requested
+        if (calendarEventDetails != null && calendarEventDetails.isCreateCalendarEvent()) {
+            try {
+                // Create calendar event
+                googleCalendarService.createEvent(
+                    calendarEventDetails.getSummary() != null ? calendarEventDetails.getSummary() : document.getTitle(),
+                    "", // location
+                    calendarEventDetails.getDescription() != null ? calendarEventDetails.getDescription() : document.getDescription(),
+                    calendarEventDetails.getStartDateTime(),
+                    calendarEventDetails.getEndDateTime(),
+                    calendarEventDetails.getTimeZone() != null ? calendarEventDetails.getTimeZone() : "UTC",
+                    null // no attendees for now
+                );
+            } catch (Exception e) {
+                // Log the error but don't fail the document creation
+                System.err.println("Failed to create calendar event: " + e.getMessage());
+            }
+        }
+
+        return savedDocument;
     }
 
     @Override
