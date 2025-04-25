@@ -28,9 +28,12 @@ public class NotificationController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<Notification> createNotification(@Valid @RequestBody Notification notification) {
+    public ResponseEntity<NotificationDTO> createNotification(
+            @Valid @RequestBody Notification notification,
+            @AuthenticationPrincipal User user) {
+        notification.setUser(user);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(notificationService.createNotification(notification));
+                .body(NotificationDTO.fromEntity(notificationService.createNotification(notification)));
     }
 
     @PostMapping("/schedule")
