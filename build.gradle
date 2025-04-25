@@ -47,6 +47,9 @@ dependencies {
     
     // Jakarta Annotations
     implementation 'jakarta.annotation:jakarta.annotation-api'
+
+    // Spring Boot Mail Starter
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 // tasks.named('test') {

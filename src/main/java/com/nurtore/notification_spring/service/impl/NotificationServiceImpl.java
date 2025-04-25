@@ -176,14 +176,14 @@ public class NotificationServiceImpl implements NotificationService {
         for (Notification notification : pendingNotifications) {
             try {
                 // Check if user has enabled this notification channel
-                Optional<NotificationPreference> preference = 
-                    preferenceService.getPreferenceByUserAndChannel(notification.getUser(), notification.getChannel());
+                // Optional<NotificationPreference> preference = 
+                //     preferenceService.getPreferenceByUserAndChannel(notification.getUser(), notification.getChannel());
                 
-                if (preference.isEmpty() || !preference.get().getEnabled()) {
-                    log.info("Skipping notification {} as channel {} is disabled for user {}", 
-                        notification.getId(), notification.getChannel(), notification.getUser().getId());
-                    continue;
-                }
+                // if (preference.isEmpty() || !preference.get().getEnabled()) {
+                //     log.info("Skipping notification {} as channel {} is disabled for user {}", 
+                //         notification.getId(), notification.getChannel(), notification.getUser().getId());
+                //     continue;
+                // }
 
                 // Send notification based on channel
                 boolean sent = switch (notification.getChannel()) {
