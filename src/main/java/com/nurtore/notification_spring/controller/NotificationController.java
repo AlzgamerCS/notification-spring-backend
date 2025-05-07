@@ -30,7 +30,6 @@ public class NotificationController {
     private final DocumentService documentService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<NotificationDTO> createNotification(
             @Valid @RequestBody CreateNotificationRequest request,
             @AuthenticationPrincipal User user) {
@@ -49,7 +48,6 @@ public class NotificationController {
     }
 
     @PostMapping("/with-event")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<NotificationDTO> createNotificationWithEvent(
             @Valid @RequestBody CreateNotificationWithEventRequest request,
             @AuthenticationPrincipal User user) {
@@ -70,7 +68,6 @@ public class NotificationController {
     }
 
     @PostMapping("/schedule")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Void> scheduleNotification(@Valid @RequestBody Notification notification) {
         // Fetch the actual entities to avoid lazy loading issues
         User user = userService.getUserById(notification.getUser().getId())
@@ -83,7 +80,6 @@ public class NotificationController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Void> updateNotification(
             @PathVariable UUID id,
             @Valid @RequestBody Notification notification) {
@@ -103,7 +99,6 @@ public class NotificationController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER') or @notificationPermissionEvaluator.hasAccess(#id, authentication.principal)")
     public ResponseEntity<NotificationDTO> getNotificationById(@PathVariable UUID id) {
         return notificationService.getNotificationById(id)
                 .map(notification -> ResponseEntity.ok(NotificationDTO.fromEntity(notification)))
@@ -111,7 +106,6 @@ public class NotificationController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<List<NotificationDTO>> getNotificationsByUser(@PathVariable UUID userId) {
         return userService.getUserById(userId)
                 .map(user -> ResponseEntity.ok(
@@ -122,7 +116,6 @@ public class NotificationController {
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<List<NotificationWithDocumentDTO>> getMyNotifications(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(
             notificationService.getNotificationsByUser(user).stream()
@@ -131,7 +124,6 @@ public class NotificationController {
     }
 
     @GetMapping("/document/{documentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER') or @documentPermissionEvaluator.hasAccess(#documentId, authentication.principal)")
     public ResponseEntity<List<NotificationDTO>> getNotificationsByDocument(@PathVariable UUID documentId) {
         return documentService.getDocumentById(documentId)
                 .map(document -> ResponseEntity.ok(
@@ -142,7 +134,6 @@ public class NotificationController {
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<List<NotificationDTO>> getNotificationsByStatus(@PathVariable NotificationStatus status) {
         return ResponseEntity.ok(
             notificationService.getNotificationsByStatus(status).stream()
@@ -151,7 +142,6 @@ public class NotificationController {
     }
 
     @GetMapping("/pending")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<List<NotificationDTO>> getPendingNotificationsDue() {
         return ResponseEntity.ok(
             notificationService.getPendingNotificationsDue().stream()
@@ -160,7 +150,6 @@ public class NotificationController {
     }
 
     @GetMapping("/user/{userId}/status/{status}")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<List<NotificationDTO>> getUserNotificationsByStatus(
             @PathVariable UUID userId,
             @PathVariable NotificationStatus status) {
@@ -173,7 +162,6 @@ public class NotificationController {
     }
 
     @GetMapping("/user/{userId}/date-range")
-    @PreAuthorize("hasRole('ADMIN') or #userId == authentication.principal.id")
     public ResponseEntity<List<NotificationDTO>> getUserNotificationsInDateRange(
             @PathVariable UUID userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -187,26 +175,22 @@ public class NotificationController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteNotification(@PathVariable UUID id) {
         notificationService.deleteNotification(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/mark-sent")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<NotificationDTO> markNotificationAsSent(@PathVariable UUID id) {
         return ResponseEntity.ok(NotificationDTO.fromEntity(notificationService.markNotificationAsSent(id)));
     }
 
     @PatchMapping("/{id}/dismiss")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER') or @notificationPermissionEvaluator.hasAccess(#id, authentication.principal)")
     public ResponseEntity<NotificationDTO> markNotificationAsDismissed(@PathVariable UUID id) {
         return ResponseEntity.ok(NotificationDTO.fromEntity(notificationService.markNotificationAsDismissed(id)));
     }
 
     @PostMapping("/process")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> processNotifications() {
         notificationService.processNotifications();
         return ResponseEntity.accepted().build();

@@ -8,7 +8,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,21 +20,18 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> createUser(@Valid @RequestBody User user) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(UserDTO.fromEntity(userService.createUser(user)));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
     public ResponseEntity<UserDTO> updateUser(@PathVariable UUID id, @Valid @RequestBody User user) {
         user.setId(id);
         return ResponseEntity.ok(UserDTO.fromEntity(userService.updateUser(user)));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
     public ResponseEntity<UserDTO> getUserById(@PathVariable UUID id) {
         return userService.getUserById(id)
                 .map(user -> ResponseEntity.ok(UserDTO.fromEntity(user)))
@@ -43,7 +39,6 @@ public class UserController {
     }
 
     @GetMapping("/email/{email}")
-    @PreAuthorize("hasRole('ADMIN') or #email == authentication.principal.username")
     public ResponseEntity<UserDTO> getUserByEmail(@PathVariable String email) {
         return userService.getUserByEmail(email)
                 .map(user -> ResponseEntity.ok(UserDTO.fromEntity(user)))
@@ -51,7 +46,6 @@ public class UserController {
     }
 
     @GetMapping("/role/{role}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserDTO>> getUsersByRole(@PathVariable UserRole role) {
         return ResponseEntity.ok(
             userService.getUsersByRole(role).stream()
@@ -65,7 +59,6 @@ public class UserController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         return ResponseEntity.ok(
             userService.getAllUsers().stream()
@@ -74,7 +67,6 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();

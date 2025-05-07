@@ -30,7 +30,6 @@ public class DocumentController {
     private final UserService userService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<DocumentDTO> createDocument(
             @Valid @RequestBody CreateDocumentRequest request,
             @AuthenticationPrincipal User user) {
@@ -49,7 +48,6 @@ public class DocumentController {
     }
 
     @PostMapping("/with-event")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<DocumentDTO> createDocumentWithEvent(
             @Valid @RequestBody CreateDocumentWithEventRequest request,
             @AuthenticationPrincipal User user) {
@@ -70,14 +68,12 @@ public class DocumentController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER') or @documentPermissionEvaluator.isOwner(#id, authentication.principal)")
     public ResponseEntity<DocumentDTO> updateDocument(@PathVariable UUID id, @Valid @RequestBody Document document) {
         document.setId(id);
         return ResponseEntity.ok(DocumentDTO.fromEntity(documentService.updateDocument(document)));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER') or @documentPermissionEvaluator.hasAccess(#id, authentication.principal)")
     public ResponseEntity<DocumentDTO> getDocumentById(@PathVariable UUID id) {
         return documentService.getDocumentById(id)
                 .map(document -> ResponseEntity.ok(DocumentDTO.fromEntity(document)))
@@ -85,7 +81,6 @@ public class DocumentController {
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<List<DocumentDTO>> getMyDocuments(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(
             documentService.getDocumentsByOwner(user).stream()
@@ -94,7 +89,6 @@ public class DocumentController {
     }
 
     @GetMapping("/owner/{ownerId}")
-    @PreAuthorize("hasRole('ADMIN') or #ownerId == authentication.principal.id")
     public ResponseEntity<List<DocumentDTO>> getDocumentsByOwner(@PathVariable UUID ownerId) {
         return userService.getUserById(ownerId)
                 .map(owner -> ResponseEntity.ok(
@@ -105,7 +99,6 @@ public class DocumentController {
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<List<DocumentDTO>> getDocumentsByStatus(@PathVariable DocumentStatus status) {
         return ResponseEntity.ok(
             documentService.getDocumentsByStatus(status).stream()
@@ -114,7 +107,6 @@ public class DocumentController {
     }
 
     @GetMapping("/category/{category}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<List<DocumentDTO>> getDocumentsByCategory(@PathVariable DocumentCategory category) {
         return ResponseEntity.ok(
             documentService.getDocumentsByCategory(category).stream()
@@ -123,7 +115,6 @@ public class DocumentController {
     }
 
     @GetMapping("/expiring")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<List<DocumentDTO>> getExpiringDocuments(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate expirationDate) {
         return ResponseEntity.ok(
@@ -133,7 +124,6 @@ public class DocumentController {
     }
 
     @GetMapping("/expiring/range")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<List<DocumentDTO>> getDocumentsExpiringBetween(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
@@ -144,7 +134,6 @@ public class DocumentController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'USER')")
     public ResponseEntity<List<DocumentDTO>> searchDocumentsByTitle(@RequestParam String title) {
         return ResponseEntity.ok(
             documentService.searchDocumentsByTitle(title).stream()
@@ -153,14 +142,12 @@ public class DocumentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @documentPermissionEvaluator.isOwner(#id, authentication.principal)")
     public ResponseEntity<Void> deleteDocument(@PathVariable UUID id) {
         documentService.deleteDocument(id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER') or @documentPermissionEvaluator.isOwner(#id, authentication.principal)")
     public ResponseEntity<DocumentDTO> updateDocumentStatus(
             @PathVariable UUID id,
             @RequestParam DocumentStatus status) {
