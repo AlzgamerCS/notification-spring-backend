@@ -35,8 +35,7 @@ public class User implements UserDetails {
     private String email;
 
     @Transient
-    @JsonIgnore
-    private String password; // Plain text, not stored
+    private String password; // Plain text password for registration/login
 
     @JsonIgnore
     @Column(name = "password_hash", nullable = false)
@@ -45,6 +44,9 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
+
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -59,8 +61,30 @@ public class User implements UserDetails {
     }
 
     @Override
+    @JsonIgnore
     public String getPassword() {
+        // For Spring Security authentication, return the hashed password
         return passwordHash;
+    }
+
+    // Method to get plain text password (used during registration)
+    @JsonIgnore
+    public String getPlainPassword() {
+        return password;
+    }
+
+    // Method to set plain text password
+    public void setPlainPassword(String password) {
+        this.password = password;
+    }
+
+    @JsonIgnore
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
     @Override
@@ -85,6 +109,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return emailVerified;
     }
 } 

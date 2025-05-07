@@ -6,6 +6,7 @@ import com.nurtore.notification_spring.repository.UserRepository;
 import com.nurtore.notification_spring.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -23,13 +25,23 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User createUser(User user) {
+        log.debug("Creating user with email: {}", user.getEmail());
+        log.debug("Password present in createUser: {}", user.getPlainPassword() != null);
+        log.debug("Password length in createUser: {}", user.getPlainPassword() != null ? user.getPlainPassword().length() : 0);
+
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new IllegalArgumentException("Email already exists: " + user.getEmail());
         }
-        String plainPassword = user.getPassword();
-        validatePassword(plainPassword);
-        user.setPasswordHash(passwordEncoder.encode(plainPassword));
-        return userRepository.save(user);
+        
+        validatePassword(user.getPlainPassword());
+        String hashedPassword = passwordEncoder.encode(user.getPlainPassword());
+        user.setPasswordHash(hashedPassword);
+        // Don't clear the plain password yet as it might be needed for the response
+        User savedUser = userRepository.save(user);
+        
+        // Clear the plain text password after saving
+        savedUser.setPlainPassword(null);
+        return savedUser;
     }
 
     @Override
@@ -52,9 +64,9 @@ public class UserServiceImpl implements UserService {
         }
         
         // Handle password update separately and explicitly
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            validatePassword(user.getPassword());
-            existingUser.setPasswordHash(passwordEncoder.encode(user.getPassword()));
+        if (user.getPlainPassword() != null && !user.getPlainPassword().isEmpty()) {
+            validatePassword(user.getPlainPassword());
+            existingUser.setPasswordHash(passwordEncoder.encode(user.getPlainPassword()));
         }
         
         return userRepository.save(existingUser);
@@ -99,6 +111,9 @@ public class UserServiceImpl implements UserService {
     }
 
     private void validatePassword(String password) {
+        log.debug("Validating password, password present: {}", password != null);
+        log.debug("Password length in validation: {}", password != null ? password.length() : 0);
+
         if (password == null || password.isEmpty()) {
             throw new IllegalArgumentException("Password cannot be null or empty");
         }
