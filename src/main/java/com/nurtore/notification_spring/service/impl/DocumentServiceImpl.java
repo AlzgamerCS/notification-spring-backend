@@ -44,6 +44,9 @@ public class DocumentServiceImpl implements DocumentService {
         // Create calendar event if requested
         if (calendarEventDetails != null && calendarEventDetails.isCreateCalendarEvent()) {
             try {
+                // Create list of attendees with the user's email
+                List<String> attendees = List.of(document.getOwner().getEmail());
+
                 // Create calendar event
                 googleCalendarService.createEvent(
                     calendarEventDetails.getSummary() != null ? calendarEventDetails.getSummary() : document.getTitle(),
@@ -52,7 +55,7 @@ public class DocumentServiceImpl implements DocumentService {
                     calendarEventDetails.getStartDateTime(),
                     calendarEventDetails.getEndDateTime(),
                     calendarEventDetails.getTimeZone() != null ? calendarEventDetails.getTimeZone() : "UTC",
-                    null // no attendees for now
+                    attendees
                 );
             } catch (Exception e) {
                 // Log the error but don't fail the document creation

@@ -136,7 +136,9 @@ public class GoogleCalendarService {
 
         // Insert the event
         String calendarId = "primary";
-        event = service.events().insert(calendarId, event).execute();
+        event = service.events().insert(calendarId, event)
+            .setSendNotifications(true)  // Enable email notifications for attendees
+            .execute();
         System.out.printf("Event created: %s\n", event.getHtmlLink());
         
         return event;

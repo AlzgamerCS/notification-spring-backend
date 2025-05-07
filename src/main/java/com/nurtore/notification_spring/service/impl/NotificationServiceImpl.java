@@ -50,6 +50,9 @@ public class NotificationServiceImpl implements NotificationService {
         // Create calendar event if requested
         if (calendarEventDetails != null && calendarEventDetails.isCreateCalendarEvent()) {
             try {
+                // Create list of attendees with the user's email
+                List<String> attendees = List.of(notification.getUser().getEmail());
+                
                 // Create calendar event
                 googleCalendarService.createEvent(
                     calendarEventDetails.getSummary() != null ? calendarEventDetails.getSummary() : 
@@ -60,7 +63,7 @@ public class NotificationServiceImpl implements NotificationService {
                     calendarEventDetails.getStartDateTime(),
                     calendarEventDetails.getEndDateTime(),
                     calendarEventDetails.getTimeZone() != null ? calendarEventDetails.getTimeZone() : "UTC",
-                    null // no attendees for now
+                    attendees
                 );
             } catch (Exception e) {
                 log.error("Failed to create calendar event for notification {}: {}", notification.getId(), e.getMessage());
