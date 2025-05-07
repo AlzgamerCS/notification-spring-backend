@@ -36,7 +36,8 @@ public class UserServiceImpl implements UserService {
     public User updateUser(User user) {
         User existingUser = userRepository.findById(user.getId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + user.getId()));
-        // Update fields if provided
+        
+        // Update non-sensitive fields if provided
         if (user.getName() != null) {
             existingUser.setName(user.getName());
         }
@@ -46,14 +47,16 @@ public class UserServiceImpl implements UserService {
         if (user.getRole() != null) {
             existingUser.setRole(user.getRole());
         }
-        // Update password if provided
-        String newPassword = user.getPassword();
-        validatePassword(newPassword);
-        String storedHash = existingUser.getPasswordHash();
-        if (passwordEncoder.matches(newPassword, storedHash)) {
-            throw new IllegalArgumentException("New password must differ from the current password");
+        if (user.getLastLoginAt() != null) {
+            existingUser.setLastLoginAt(user.getLastLoginAt());
         }
-        existingUser.setPasswordHash(passwordEncoder.encode(newPassword));
+        
+        // Handle password update separately and explicitly
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            validatePassword(user.getPassword());
+            existingUser.setPasswordHash(passwordEncoder.encode(user.getPassword()));
+        }
+        
         return userRepository.save(existingUser);
     }
 

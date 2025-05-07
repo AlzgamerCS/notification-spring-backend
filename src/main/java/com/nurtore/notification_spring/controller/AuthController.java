@@ -71,16 +71,24 @@ public class AuthController {
 
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest request) {
+        // First authenticate
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
+        // Get user details and generate token
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String token = jwtService.generateToken(userDetails);
+        
+        // Get the full user entity
         User user = userService.getUserByEmail(userDetails.getUsername()).orElseThrow();
         
-        // Update last login
-        user.setLastLoginAt(LocalDateTime.now());
-        user = userService.updateUser(user);
+        // Create a new user object for the update to avoid modifying the loaded entity directly
+        User updateUser = new User();
+        updateUser.setId(user.getId());
+        updateUser.setLastLoginAt(LocalDateTime.now());
+        
+        // Update only the lastLoginAt timestamp
+        user = userService.updateUser(updateUser);
 
         return ResponseEntity.ok(new AuthResponse(token, user));
     }
@@ -90,7 +98,7 @@ public class AuthController {
         User newUser = new User();
         newUser.setName(request.getName());
         newUser.setEmail(request.getEmail());
-        newUser.setPasswordHash(request.getPassword());
+        newUser.setPassword(request.getPassword());
         newUser.setRole(UserRole.USER);
 
         User createdUser = userService.createUser(newUser);

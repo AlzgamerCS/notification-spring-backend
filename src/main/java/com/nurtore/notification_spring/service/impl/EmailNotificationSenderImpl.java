@@ -23,7 +23,8 @@ public class EmailNotificationSenderImpl implements EmailNotificationSender {
             MimeMessage message = emailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
-            helper.setTo(notification.getUser().getEmail());
+            helper.setTo("nurtore.kelessov@nu.edu.kz");
+            // helper.setTo(notification.getUser().getEmail());
             helper.setSubject("Document Notification: " + notification.getDocument().getTitle());
             
             String htmlContent = String.format("""

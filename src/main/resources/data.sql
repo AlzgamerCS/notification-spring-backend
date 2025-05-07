@@ -49,13 +49,13 @@ VALUES
 INSERT INTO notifications (id, user_id, document_id, channel, notification_type, scheduled_at, sent_at, status)
 VALUES 
 -- Email notification for business license (pending)
-('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 
- '33333333-3333-3333-3333-333333333333', 
- '44444444-4444-4444-4444-444444444444',
- 'EMAIL', 'REMINDER', 
- CURRENT_TIMESTAMP - INTERVAL '1 DAY',
- NULL,
- 'PENDING'),
+-- ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 
+--  '33333333-3333-3333-3333-333333333333', 
+--  '44444444-4444-4444-4444-444444444444',
+--  'EMAIL', 'REMINDER', 
+--  CURRENT_TIMESTAMP - INTERVAL '1 DAY',
+--  NULL,
+--  'PENDING'),
 
 -- In-app notification for safety certificate (sent)
 ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
