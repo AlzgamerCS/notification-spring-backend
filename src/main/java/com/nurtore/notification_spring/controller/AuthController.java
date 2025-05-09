@@ -130,6 +130,7 @@ public class AuthController {
             newUser.setPlainPassword(request.getPassword());
             newUser.setRole(UserRole.USER);
             newUser.setEmailVerified(false);
+            newUser.setTelegramChatId(request.getTelegramChatId());
 
             log.debug("Created user object with password present: {}", newUser.getPlainPassword() != null);
             log.debug("User password length: {}", newUser.getPlainPassword() != null ? newUser.getPlainPassword().length() : 0);

@@ -49,15 +49,45 @@ public class TelegramNotificationSenderImpl extends TelegramLongPollingBot imple
 
     @Override
     public void onUpdateReceived(Update update) {
-        // We don't need to handle incoming messages for now
-        // This method is required by TelegramLongPollingBot
+        if (update.hasMessage() && update.getMessage().hasText()) {
+            String chatId = update.getMessage().getChatId().toString();
+            String firstName = update.getMessage().getFrom().getFirstName();
+            
+            try {
+                SendMessage response = new SendMessage();
+                response.setChatId(chatId);
+                response.setText(String.format("""
+                    👋 Hello %s!
+                    
+                    Your Telegram Chat ID is: `%s`
+                    
+                    To receive notifications through this bot:
+                    1. Copy this Chat ID
+                    2. Add it to your profile during registration or update your profile
+                    
+                    Once set up, you'll receive document notifications here!
+                    """, firstName, chatId));
+                response.enableMarkdown(true);
+                execute(response);
+                log.info("Sent chat ID information to user: {}", chatId);
+            } catch (TelegramApiException e) {
+                log.error("Failed to send chat ID information", e);
+            }
+        }
     }
 
     @Override
     public boolean send(Notification notification) {
+        String recipientChatId = notification.getUser().getTelegramChatId();
+        if (recipientChatId == null || recipientChatId.isEmpty()) {
+            log.info("Skipping Telegram notification for user {} as they have no Telegram chat ID configured", 
+                    notification.getUser().getId());
+            return false;
+        }
+
         try {
             SendMessage message = new SendMessage();
-            message.setChatId(defaultChatId);
+            message.setChatId(recipientChatId);
             
             String text = String.format("""
                 📄 Document Notification
@@ -77,7 +107,7 @@ public class TelegramNotificationSenderImpl extends TelegramLongPollingBot imple
             message.enableMarkdown(true);
             
             execute(message);
-            log.info("Successfully sent Telegram notification to chat: {}", defaultChatId);
+            log.info("Successfully sent Telegram notification to chat: {}", recipientChatId);
             return true;
         } catch (TelegramApiException e) {
             log.error("Failed to send Telegram notification", e);

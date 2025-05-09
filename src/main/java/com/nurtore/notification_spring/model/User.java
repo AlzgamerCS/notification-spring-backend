@@ -34,6 +34,9 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(name = "telegram_chat_id")
+    private String telegramChatId;
+
     @Transient
     private String password; // Plain text password for registration/login
 
